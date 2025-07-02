@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requisition Form Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .user-selector {
+            background: #f8f9fa;
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .role-switch {
+            display: flex;
+            gap: 10px;
+        }
+
+        .role-btn {
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .role-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            font-size: 16px;
+        }
+
+        .tab.active {
+            background: white;
+            border-bottom: 3px solid #667eea;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .required {
+            color: #dc3545;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .file-upload {
+            border: 2px dashed #e9ecef;
+            padding: 30px;
+            text-align: center;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .file-upload.dragover {
+            border-color: #667eea;
+            background: #f0f8ff;
+        }
+
+        .uploaded-files {
+            margin-top: 15px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+
+        .file-remove {
+            color: #dc3545;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .requisitions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .requisitions-table th,
+        .requisitions-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .requisitions-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        .requisitions-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-approved {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-paid {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .rf-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .summary-card h3 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .summary-card p {
+            opacity: 0.9;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .filter-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+
+        @media (max-width: 768px) {
+            .form-row, .form-row-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .user-selector {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-row {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Requisition Form System</h1>
+            <p>Streamlined purchase request management for your organization</p>
+        </div>
+
+        <div class="user-selector">
+            <div>
+                <strong>Logged in as: <span id="currentUser">John Smith</span></strong>
+                <span style="margin-left: 15px; color: #666;">
+                    Role: <span id="currentRole">Staff</span>
+                </span>
+            </div>
+            <div class="role-switch">
+                <button class="role-btn active" onclick="switchRole('staff')">Staff View</button>
+                <button class="role-btn" onclick="switchRole('manager')">Manager View</button>
+            </div>
+        </div>
+
+        <div class="tabs" id="staffTabs">
+            <button class="tab active" onclick="showSection('create')">New Requisition</button>
+            <button class="tab" onclick="showSection('my-requests')">My Requests</button>
+        </div>
+
+        <div class="tabs" id="managerTabs" style="display: none;">
+            <button class="tab active" onclick="showSection('dashboard')">Dashboard</button>
+            <button class="tab" onclick="showSection('all-requests')">All Requests</button>
+            <button class="tab" onclick="showSection('reports')">Reports</button>
+        </div>
+
+        <div class="content">
+            <div class="success-message" id="successMessage">
+                Requisition submitted successfully! RF ID: <span id="newRFId"></span>
+            </div>
+
+            <!-- Staff: Create New Requisition -->
+            <div class="section active" id="createSection">
+                <h2>Create New Requisition Form</h2>
+                <form id="requisitionForm">
+                    <div class="rf-details">
+                        <h3>Requisition Details</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="rfDate">Date <span class="required">*</span></label>
+                                <input type="date" id="rfDate" name="rfDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="projectName">Project Name <span class="required">*</span></label>
+                                <input type="text" id="projectName" name="projectName" placeholder="Enter project name" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rf-details">
+                        <h3>Item Details</h3>
+                        
+                        <div class="form-group">
+                            <label for="supplier">Supplier</label>
+                            <input type="text" id="supplier" name="supplier" placeholder="Supplier name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="itemDescription">Description/Remarks <span class="required">*</span></label>
+                            <textarea id="itemDescription" name="itemDescription" placeholder="Describe the item(s) you need..." required></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="totalAmount">Total Amount (RM) <span class="required">*</span></label>
+                                <input type="number" id="totalAmount" name="totalAmount" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="urgency">Urgency Level <span class="required">*</span></label>
+                                <select id="urgency" name="urgency" required>
+                                    <option value="">Select Urgency</option>
+                                    <option value="Low">Low (30+ days)</option>
+                                    <option value="Medium">Medium (7-30 days)</option>
+                                    <option value="High">High (1-7 days)</option>
+                                    <option value="Critical">Critical (ASAP)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rf-details">
+                        <h3>Supporting Documents</h3>
+                        
+                        <div class="file-upload" id="fileUpload">
+                            <div>
+                                <strong>Drag & drop files here or click to browse</strong>
+                                <p style="margin-top: 10px; color: #666;">
+                                    Accepted: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (Max 10MB each)
+                                </p>
+                            </div>
+                            <input type="file" id="fileInput" multiple style="display: none;" 
+                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">
+                        </div>
+                        
+                        <div class="uploaded-files" id="uploadedFiles"></div>
+                    </div>
+
+                    <div style="margin-top: 30px;">
+                        <button type="submit" class="btn">Submit Requisition</button>
+                        <button type="reset" class="btn btn-secondary">Reset Form</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Staff: My Requests -->
+            <div class="section" id="my-requestsSection">
+                <h2>My Requisition Requests</h2>
+                
+                <div class="filter-section">
+                    <div class="filter-row">
+                        <div class="form-group">
+                            <label for="myStatusFilter">Filter by Status</label>
+                            <select id="myStatusFilter" onchange="filterMyRequests()">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="paid">Paid</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="myDateFilter">Filter by Date</label>
+                            <input type="month" id="myDateFilter" onchange="filterMyRequests()">
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-secondary" onclick="clearMyFilters()">Clear Filters</button>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="requisitions-table" id="myRequestsTable">
+                    <thead>
+                        <tr>
+                            <th>RF ID</th>
+                            <th>Date</th>
+                            <th>Project Name</th>
+                            <th>Description</th>
+                            <th>Amount (RM)</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="myRequestsBody">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Manager: Dashboard -->
+            <div class="section" id="dashboardSection">
+                <h2>Manager Dashboard</h2>
+                
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <h3 id="totalRequests">0</h3>
+                        <p>Total Requests</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3 id="pendingRequests">0</h3>
+                        <p>Pending Approval</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3 id="totalValue">RM 0</h3>
+                        <p>Total Value</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3 id="thisMonth">0</h3>
+                        <p>This Month</p>
+                    </div>
+                </div>
+
+                <h3>Urgent Requests Requiring Attention</h3>
+                <table class="requisitions-table">
+                    <thead>
+                        <tr>
+                            <th>RF ID</th>
+                            <th>Project Name</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Urgency</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="urgentRequestsBody">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Manager: All Requests -->
+            <div class="section" id="all-requestsSection">
+                <h2>All Requisition Requests</h2>
+                
+                <div class="filter-section">
+                    <div class="filter-row">
+                        <div class="form-group">
+                            <label for="statusFilter">Status</label>
+                            <select id="statusFilter" onchange="filterAllRequests()">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="paid">Paid</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="dateFilter">Month</label>
+                            <input type="month" id="dateFilter" onchange="filterAllRequests()">
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-secondary" onclick="clearAllFilters()">Clear Filters</button>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="requisitions-table" id="allRequestsTable">
+                    <thead>
+                        <tr>
+                            <th>RF ID</th>
+                            <th>Date</th>
+                            <th>Project Name</th>
+                            <th>Description</th>
+                            <th>Amount (RM)</th>
+                            <th>Urgency</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="allRequestsBody">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Manager: Reports -->
+            <div class="section" id="reportsSection">
+                <h2>Reports & Analytics</h2>
+                
+                <div class="export-buttons" style="margin-bottom: 30px;">
+                    <button class="btn btn-success" onclick="exportToCSV()">Export All to CSV</button>
+                    <button class="btn btn-success" onclick="exportToExcel()">Export All to Excel</button>
+                    <button class="btn btn-success" onclick="exportToPDF()">Generate PDF Report</button>
+                </div>
+
+                <div class="rf-details">
+                    <h3>Monthly Summary</h3>
+                    <div class="summary-cards">
+                        <div class="summary-card">
+                            <h3 id="monthlyTotal">RM 0</h3>
+                            <p>This Month's Total</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3 id="averageAmount">RM 0</h3>
+                            <p>Average Request Value</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3 id="approvalRate">0%</h3>
+                            <p>Approval Rate</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3 id="avgProcessingTime">0 days</h3>
+                            <p>Avg Processing Time</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for viewing requisition details -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div id="modalContent">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data - in real application, this would come from a database
+        let requisitions = [
+            {
+                id: 'RF-2024-001',
+                date: '2024-06-15',
+                projectName: 'Digital Transformation Initiative',
+                itemDescription: 'Dell Laptop - Core i7, 16GB RAM, 512GB SSD',
+                totalAmount: 7000.00,
+                supplier: 'Dell Malaysia',
+                urgency: 'Medium',
+                status: 'pending',
+                submittedDate: '2024-06-15T10:30:00',
+                files: ['quote-dell-laptops.pdf', 'technical-specs.pdf']
+            },
+            {
+                id: 'RF-2024-002',
+                date: '2024-06-10',
+                projectName: 'Marketing Campaign Q3',
+                itemDescription: 'Adobe Creative Suite Licenses',
+                totalAmount: 12000.00,
+                supplier: 'Adobe Systems',
+                urgency: 'High',
+                status: 'approved',
+                submittedDate: '2024-06-10T14:15:00',
+                approvedDate: '2024-06-12T09:00:00',
+                files: ['adobe-quote.pdf']
+            },
+            {
+                id: 'RF-2024-003',
+                date: '2024-06-01',
+                projectName: 'Office Renovation Project',
+                itemDescription: 'Office Furniture - Ergonomic Chairs',
+                totalAmount: 8000.00,
+                supplier: 'IKEA Business',
+                urgency: 'Low',
+                status: 'paid',
+                submittedDate: '2024-06-01T11:20:00',
+                approvedDate: '2024-06-03T10:00:00',
+                paidDate: '2024-06-20T15:30:00',
+                files: ['furniture-catalog.pdf', 'ergonomic-study.pdf']
+            }
+        ];
+
+        let currentRole = 'staff';
+        let currentUser = 'John Smith';
+        let rfCounter = 4;
+
+        // Initialize the application
+        function init() {
+            document.getElementById('rfDate').value = new Date().toISOString().split('T')[0];
+            updateDashboard();
+            showMyRequests();
+            setupFileUpload();
+        }
+
+        // Role switching
+        function switchRole(role) {
+            currentRole = role;
+            
+            // Update role buttons
+            document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update role display
+            document.getElementById('currentRole').textContent = role === 'staff' ? 'Staff' : 'Manager';
+            
+            // Show/hide appropriate tabs
+            if (role === 'staff') {
+                document.getElementById('staffTabs').style.display = 'flex';
+                document.getElementById('managerTabs').style.display = 'none';
+                showSection('create');
+            } else {
+                document.getElementById('staffTabs').style.display = 'none';
+                document.getElementById('managerTabs').style.display = 'flex';
+                showSection('dashboard');
+                updateDashboard();
+            }
+        }
+
+        // Section navigation
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected section and activate tab
+            document.getElementById(sectionName + 'Section').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Load data for specific sections
+            if (sectionName === 'my-requests') {
+                showMyRequests();
+            } else if (sectionName === 'dashboard') {
+                updateDashboard();
+                showUrgentRequests();
+            } else if (sectionName === 'all-requests') {
+                showAllRequests();
+            } else if (sectionName === 'reports') {
+                updateReports();
+            }
+        }
+
+        // File upload functionality
+        function setupFileUpload() {
+            const fileUpload = document.getElementById('fileUpload');
+            const fileInput = document.getElementById('fileInput');
+            let uploadedFiles = [];
+
+            fileUpload.addEventListener('click', () => fileInput.click());
+            
+            fileUpload.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUpload.classList.add('dragover');
+            });
+            
+            fileUpload.addEventListener('dragleave', () => {
+                fileUpload.classList.remove('dragover');
+            });
+            
+            fileUpload.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileUpload.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+
+            function handleFiles(files) {
+                for (let file of files) {
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert(`File ${file.name} is too large. Maximum size is 10MB.`);
+                        continue;
+                    }
+                    
+                    uploadedFiles.push(file);
+                    displayUploadedFile(file);
+                }
+            }
+
+            function displayUploadedFile(file) {
+                const uploadedFilesDiv = document.getElementById('uploadedFiles');
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <span>${file.name} (${(file.size / 1024).toFixed(1)} KB)</span>
+                    <span class="file-remove" onclick="removeFile('${file.name}')">✕</span>
+                `;
+                uploadedFilesDiv.appendChild(fileItem);
+            }
+
+            window.removeFile = function(fileName) {
+                uploadedFiles = uploadedFiles.filter(file => file.name !== fileName);
+                document.getElementById('uploadedFiles').innerHTML = '';
+                uploadedFiles.forEach(file => displayUploadedFile(file));
+            }
+        }
+
+        // Form submission
+        document.getElementById('requisitionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            // Generate RF ID
+            const rfId = `RF-2024-${String(rfCounter).padStart(3, '0')}`;
+            rfCounter++;
+            
+            // Add metadata
+            data.id = rfId;
+            data.status = 'pending';
+            data.submittedDate = new Date().toISOString();
+            data.files = Array.from(document.querySelectorAll('.file-item span')).map(span => 
+                span.textContent.split(' (')[0]
+            );
+            
+            // Add to requisitions array
+            requisitions.unshift(data);
+            
+            // Show success message
+            const successMsg = document.getElementById('successMessage');
+            document.getElementById('newRFId').textContent = rfId;
+            successMsg.style.display = 'block';
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+            }, 5000);
+            
+            // Reset form and files
+            this.reset();
+            document.getElementById('uploadedFiles').innerHTML = '';
+            document.getElementById('rfDate').value = new Date().toISOString().split('T')[0];
+        });
+
+        // Display my requests
+        function showMyRequests() {
+            const tbody = document.getElementById('myRequestsBody');
+            const userRequests = requisitions.filter(req => true); // Show all for demo
+            
+            tbody.innerHTML = '';
+            userRequests.forEach(req => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${req.id}</strong></td>
+                    <td>${new Date(req.date).toLocaleDateString()}</td>
+                    <td>${req.projectName}</td>
+                    <td>${req.itemDescription.substring(0, 40)}...</td>
+                    <td>RM ${parseFloat(req.totalAmount).toFixed(2)}</td>
+                    <td><span class="status-badge status-${req.status}">${req.status}</span></td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn btn-sm btn-secondary" onclick="viewDetails('${req.id}')">View</button>
+                            ${req.status === 'pending' ? `<button class="btn btn-sm btn-warning" onclick="cancelRequest('${req.id}')">Cancel</button>` : ''}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Display all requests (manager view)
+        function showAllRequests() {
+            const tbody = document.getElementById('allRequestsBody');
+            
+            tbody.innerHTML = '';
+            requisitions.forEach(req => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${req.id}</strong></td>
+                    <td>${new Date(req.date).toLocaleDateString()}</td>
+                    <td>${req.projectName}</td>
+                    <td>${req.itemDescription.substring(0, 30)}...</td>
+                    <td>RM ${parseFloat(req.totalAmount).toFixed(2)}</td>
+                    <td><span class="status-badge ${req.urgency.toLowerCase()}">${req.urgency}</span></td>
+                    <td><span class="status-badge status-${req.status}">${req.status}</span></td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn btn-sm btn-secondary" onclick="viewDetails('${req.id}')">View</button>
+                            ${req.status === 'pending' ? `
+                                <button class="btn btn-sm btn-success" onclick="updateStatus('${req.id}', 'approved')">Approve</button>
+                                <button class="btn btn-sm btn-danger" onclick="updateStatus('${req.id}', 'rejected')">Reject</button>
+                            ` : ''}
+                            ${req.status === 'approved' ? `
+                                <button class="btn btn-sm btn-success" onclick="updateStatus('${req.id}', 'paid')">Mark Paid</button>
+                            ` : ''}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Show urgent requests on dashboard
+        function showUrgentRequests() {
+            const tbody = document.getElementById('urgentRequestsBody');
+            const urgentRequests = requisitions.filter(req => 
+                req.status === 'pending' && (req.urgency === 'High' || req.urgency === 'Critical')
+            );
+            
+            tbody.innerHTML = '';
+            urgentRequests.forEach(req => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${req.id}</strong></td>
+                    <td>${req.requestedBy}</td>
+                    <td>${req.itemDescription.substring(0, 30)}...</td>
+                    <td>RM ${parseFloat(req.totalAmount).toFixed(2)}</td>
+                    <td><span class="status-badge ${req.urgency.toLowerCase()}">${req.urgency}</span></td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn btn-sm btn-success" onclick="updateStatus('${req.id}', 'approved')">✅ Approve</button>
+                            <button class="btn btn-sm btn-danger" onclick="updateStatus('${req.id}', 'rejected')">❌ Reject</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Update status
+        function updateStatus(rfId, newStatus) {
+            const req = requisitions.find(r => r.id === rfId);
+            if (req) {
+                req.status = newStatus;
+                
+                // Add timestamp for status change
+                if (newStatus === 'approved') {
+                    req.approvedDate = new Date().toISOString();
+                } else if (newStatus === 'paid') {
+                    req.paidDate = new Date().toISOString();
+                }
+                
+                // Refresh displays
+                if (currentRole === 'manager') {
+                    showAllRequests();
+                    updateDashboard();
+                    showUrgentRequests();
+                } else {
+                    showMyRequests();
+                }
+                
+                alert(`Requisition ${rfId} has been ${newStatus}.`);
+            }
+        }
+
+        // Cancel request (staff)
+        function cancelRequest(rfId) {
+            if (confirm('Are you sure you want to cancel this requisition?')) {
+                updateStatus(rfId, 'cancelled');
+            }
+        }
+
+        // View details modal
+        function viewDetails(rfId) {
+            const req = requisitions.find(r => r.id === rfId);
+            if (!req) return;
+            
+            const modal = document.getElementById('detailModal');
+            const content = document.getElementById('modalContent');
+            
+            content.innerHTML = `
+                <h2>Requisition Details - ${req.id}</h2>
+                
+                <div class="rf-details">
+                    <h3>Basic Information</h3>
+                    <p><strong>Date:</strong> ${new Date(req.date).toLocaleDateString()}</p>
+                    <p><strong>Project Name:</strong> ${req.projectName}</p>
+                    <p><strong>Status:</strong> <span class="status-badge status-${req.status}">${req.status}</span></p>
+                </div>
+                
+                <div class="rf-details">
+                    <h3>Item Information</h3>
+                    <p><strong>Description/Remarks:</strong> ${req.itemDescription}</p>
+                    <p><strong>Total Amount:</strong> RM ${parseFloat(req.totalAmount).toFixed(2)}</p>
+                    <p><strong>Supplier:</strong> ${req.supplier || 'N/A'}</p>
+                    <p><strong>Urgency:</strong> ${req.urgency}</p>
+                </div>
+                
+                ${req.files && req.files.length > 0 ? `
+                <div class="rf-details">
+                    <h3>Attached Files</h3>
+                    ${req.files.map(file => `<p>${file}</p>`).join('')}
+                </div>
+                ` : ''}
+                
+                <div class="rf-details">
+                    <h3>Timeline</h3>
+                    <p><strong>Submitted:</strong> ${new Date(req.submittedDate).toLocaleString()}</p>
+                    ${req.approvedDate ? `<p><strong>Approved:</strong> ${new Date(req.approvedDate).toLocaleString()}</p>` : ''}
+                    ${req.paidDate ? `<p><strong>Paid:</strong> ${new Date(req.paidDate).toLocaleString()}</p>` : ''}
+                </div>
+                
+                ${currentRole === 'manager' && req.status === 'pending' ? `
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-success" onclick="updateStatus('${req.id}', 'approved'); closeModal();">Approve</button>
+                    <button class="btn btn-danger" onclick="updateStatus('${req.id}', 'rejected'); closeModal();">Reject</button>
+                </div>
+                ` : ''}
+                
+                ${currentRole === 'manager' && req.status === 'approved' ? `
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-success" onclick="updateStatus('${req.id}', 'paid'); closeModal();">Mark as Paid</button>
+                </div>
+                ` : ''}
+            `;
+            
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
+        // Update dashboard statistics
+        function updateDashboard() {
+            const total = requisitions.length;
+            const pending = requisitions.filter(r => r.status === 'pending').length;
+            const totalValue = requisitions.reduce((sum, r) => sum + parseFloat(r.totalAmount), 0);
+            const thisMonth = requisitions.filter(r => {
+                const reqDate = new Date(r.date);
+                const now = new Date();
+                return reqDate.getMonth() === now.getMonth() && reqDate.getFullYear() === now.getFullYear();
+            }).length;
+            
+            document.getElementById('totalRequests').textContent = total;
+            document.getElementById('pendingRequests').textContent = pending;
+            document.getElementById('totalValue').textContent = `RM ${totalValue.toFixed(2)}`;
+            document.getElementById('thisMonth').textContent = thisMonth;
+        }
+
+        // Update reports
+        function updateReports() {
+            const thisMonth = new Date();
+            const monthlyReqs = requisitions.filter(r => {
+                const reqDate = new Date(r.date);
+                return reqDate.getMonth() === thisMonth.getMonth() && reqDate.getFullYear() === thisMonth.getFullYear();
+            });
+            
+            const monthlyTotal = monthlyReqs.reduce((sum, r) => sum + parseFloat(r.totalAmount), 0);
+            const averageAmount = requisitions.length > 0 ? requisitions.reduce((sum, r) => sum + parseFloat(r.totalAmount), 0) / requisitions.length : 0;
+            const approved = requisitions.filter(r => r.status === 'approved' || r.status === 'paid').length;
+            const approvalRate = requisitions.length > 0 ? (approved / requisitions.length * 100) : 0;
+            
+            document.getElementById('monthlyTotal').textContent = `RM ${monthlyTotal.toFixed(2)}`;
+            document.getElementById('averageAmount').textContent = `RM ${averageAmount.toFixed(2)}`;
+            document.getElementById('approvalRate').textContent = `${approvalRate.toFixed(1)}%`;
+            document.getElementById('avgProcessingTime').textContent = '2.5 days';
+        }
+
+        // Filter functions
+        function filterMyRequests() {
+            // Implementation for filtering user's requests
+            showMyRequests();
+        }
+
+        function filterAllRequests() {
+            // Implementation for filtering all requests
+            showAllRequests();
+        }
+
+        function clearMyFilters() {
+            document.getElementById('myStatusFilter').value = '';
+            document.getElementById('myDateFilter').value = '';
+            showMyRequests();
+        }
+
+        function clearAllFilters() {
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('dateFilter').value = '';
+            showAllRequests();
+        }
+
+        // Export functions
+        function exportToCSV() {
+            const headers = ['RF ID', 'Date', 'Project Name', 'Description', 'Total Amount', 'Status', 'Urgency'];
+            let csvContent = headers.join(',') + '\n';
+            
+            requisitions.forEach(req => {
+                const values = [
+                    req.id,
+                    req.date,
+                    req.projectName,
+                    `"${req.itemDescription}"`,
+                    req.totalAmount,
+                    req.status,
+                    req.urgency
+                ];
+                csvContent += values.join(',') + '\n';
+            });
+            
+            downloadFile(csvContent, 'requisitions-export.csv', 'text/csv');
+        }
+
+        function exportToExcel() {
+            let htmlContent = `
+                <table border="1">
+                    <tr>
+                        <th>RF ID</th>
+                        <th>Date</th>
+                        <th>Project Name</th>
+                        <th>Description/Remarks</th>
+                        <th>Total Amount (RM)</th>
+                        <th>Status</th>
+                        <th>Urgency</th>
+                    </tr>
+            `;
+            
+            requisitions.forEach(req => {
+                htmlContent += `
+                    <tr>
+                        <td>${req.id}</td>
+                        <td>${req.date}</td>
+                        <td>${req.projectName}</td>
+                        <td>${req.itemDescription}</td>
+                        <td>${req.totalAmount}</td>
+                        <td>${req.status}</td>
+                        <td>${req.urgency}</td>
+                    </tr>
+                `;
+            });
+            
+            htmlContent += '</table>';
+            downloadFile(htmlContent, 'requisitions-export.xls', 'application/vnd.ms-excel');
+        }
+
+        function exportToPDF() {
+            let pdfContent = `
+                <html>
+                <head>
+                    <title>Requisition Forms Report</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        h1 { color: #333; text-align: center; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+                        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Requisition Forms Report</h1>
+                    <p><strong>Generated on:</strong> ${new Date().toLocaleDateString()}</p>
+                    <p><strong>Total Records:</strong> ${requisitions.length}</p>
+                    
+                    <table>
+                        <tr>
+                            <th>RF ID</th>
+                            <th>Date</th>
+                            <th>Project Name</th>
+                            <th>Description</th>
+                            <th>Amount (RM)</th>
+                            <th>Status</th>
+                        </tr>
+            `;
+            
+            requisitions.forEach(req => {
+                pdfContent += `
+                    <tr>
+                        <td>${req.id}</td>
+                        <td>${new Date(req.date).toLocaleDateString()}</td>
+                        <td>${req.projectName}</td>
+                        <td>${req.itemDescription.substring(0, 40)}...</td>
+                        <td>${parseFloat(req.totalAmount).toFixed(2)}</td>
+                        <td>${req.status}</td>
+                    </tr>
+                `;
+            });
+            
+            pdfContent += `
+                    </table>
+                    <div class="footer">
+                        <p>This report was generated by the Requisition Form Management System</p>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            const newWindow = window.open('', '_blank');
+            newWindow.document.write(pdfContent);
+            newWindow.document.close();
+            newWindow.print();
+        }
+
+        function downloadFile(content, filename, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('detailModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Initialize the application
+        init();
+    </script>
+</body>
+</html>
