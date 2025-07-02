@@ -449,6 +449,23 @@
         </div>
 
         <div class="content">
+            <!-- Setup Instructions (show only if not configured) -->
+            <div id="setupInstructions" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>🔧 Google Sheets Setup Required</h3>
+                <p>To enable data persistence, please:</p>
+                <ol>
+                    <li>Follow the setup instructions in the documentation</li>
+                    <li>Deploy your Google Apps Script</li>
+                    <li>Enter your Web App URL below:</li>
+                </ol>
+                <div style="margin-top: 15px;">
+                    <input type="url" id="appsScriptUrl" placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec" 
+                           style="width: 70%; padding: 10px; margin-right: 10px;">
+                    <button class="btn" onclick="saveAppsScriptUrl()">Save & Connect</button>
+                </div>
+                <button class="btn btn-secondary" onclick="useOfflineMode()" style="margin-top: 10px;">Use Offline Mode</button>
+            </div>
+
             <div class="success-message" id="successMessage">
                 Requisition submitted successfully! RF ID: <span id="newRFId"></span>
             </div>
@@ -705,59 +722,234 @@
     </div>
 
     <script>
-        // Sample data - in real application, this would come from a database
-        let requisitions = [
-            {
-                id: 'RF-2024-001',
-                date: '2024-06-15',
-                projectName: 'Digital Transformation Initiative',
-                itemDescription: 'Dell Laptop - Core i7, 16GB RAM, 512GB SSD',
-                totalAmount: 7000.00,
-                supplier: 'Dell Malaysia',
-                urgency: 'Medium',
-                status: 'pending',
-                submittedDate: '2024-06-15T10:30:00',
-                files: ['quote-dell-laptops.pdf', 'technical-specs.pdf']
-            },
-            {
-                id: 'RF-2024-002',
-                date: '2024-06-10',
-                projectName: 'Marketing Campaign Q3',
-                itemDescription: 'Adobe Creative Suite Licenses',
-                totalAmount: 12000.00,
-                supplier: 'Adobe Systems',
-                urgency: 'High',
-                status: 'approved',
-                submittedDate: '2024-06-10T14:15:00',
-                approvedDate: '2024-06-12T09:00:00',
-                files: ['adobe-quote.pdf']
-            },
-            {
-                id: 'RF-2024-003',
-                date: '2024-06-01',
-                projectName: 'Office Renovation Project',
-                itemDescription: 'Office Furniture - Ergonomic Chairs',
-                totalAmount: 8000.00,
-                supplier: 'IKEA Business',
-                urgency: 'Low',
-                status: 'paid',
-                submittedDate: '2024-06-01T11:20:00',
-                approvedDate: '2024-06-03T10:00:00',
-                paidDate: '2024-06-20T15:30:00',
-                files: ['furniture-catalog.pdf', 'ergonomic-study.pdf']
-            }
-        ];
+        // Google Apps Script Web App URL - CONFIGURED WITH YOUR URL
+        let APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzTKYQ0BgxPBij-QnOK6atH4vXmFIS287UvDGklYdX58hGDCap9HbCUjjlA5-kvm1-_4Q/exec';
+        
+        // Sample data - will be replaced with Google Sheets data
+        let requisitions = [];
 
         let currentRole = 'staff';
         let currentUser = 'John Smith';
         let rfCounter = 4;
 
+        // Google Sheets Integration Functions
+        async function loadRequisitionsFromSheets() {
+            try {
+                showLoading(true);
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=getAllRequisitions`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    requisitions = result.data.map(req => ({
+                        id: req.rfid,
+                        date: req.date,
+                        projectName: req.projectname,
+                        itemDescription: req.description,
+                        totalAmount: parseFloat(req.totalamount),
+                        supplier: req.supplier,
+                        urgency: req.urgency,
+                        status: req.status,
+                        submittedDate: req.submitteddate,
+                        approvedDate: req.approveddate,
+                        paidDate: req.paiddate,
+                        files: req.files ? JSON.parse(req.files) : []
+                    }));
+                    
+                    // Update displays
+                    updateDashboard();
+                    if (currentRole === 'staff') {
+                        showMyRequests();
+                    } else {
+                        showAllRequests();
+                        showUrgentRequests();
+                    }
+                } else {
+                    console.error('Error loading data:', result.error);
+                    showError('Failed to load data from Google Sheets');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Connection error. Using offline mode.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function saveRequisitionToSheets(formData) {
+            try {
+                showLoading(true);
+                
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=createRequisition`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    return result.rfId;
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error saving:', error);
+                throw error;
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function updateStatusInSheets(rfId, newStatus) {
+            try {
+                showLoading(true);
+                
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=updateStatus`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: rfId, status: newStatus })
+                });
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+                throw error;
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showLoading(show) {
+            let loadingDiv = document.getElementById('loadingIndicator');
+            if (!loadingDiv) {
+                loadingDiv = document.createElement('div');
+                loadingDiv.id = 'loadingIndicator';
+                loadingDiv.innerHTML = `
+                    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                                background: rgba(0,0,0,0.5); z-index: 9999; display: flex; 
+                                align-items: center; justify-content: center;">
+                        <div style="background: white; padding: 20px; border-radius: 10px; 
+                                    text-align: center;">
+                            <div style="border: 4px solid #f3f3f3; border-top: 4px solid #667eea; 
+                                        border-radius: 50%; width: 40px; height: 40px; 
+                                        animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+                            <p>Syncing with Google Sheets...</p>
+                        </div>
+                    </div>
+                    <style>
+                        @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
+                    </style>
+                `;
+                document.body.appendChild(loadingDiv);
+            }
+            loadingDiv.style.display = show ? 'block' : 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.innerHTML = `
+                <div style="position: fixed; top: 20px; right: 20px; background: #f8d7da; 
+                            color: #721c24; padding: 15px; border-radius: 5px; z-index: 10000;
+                            border: 1px solid #f5c6cb;">
+                    <strong>Error:</strong> ${message}
+                    <button onclick="this.parentElement.remove()" style="float: right; 
+                            background: none; border: none; font-size: 18px; cursor: pointer;">×</button>
+                </div>
+            `;
+            document.body.appendChild(errorDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (errorDiv.parentElement) {
+                    errorDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Setup and configuration functions
+        function saveAppsScriptUrl() {
+            const url = document.getElementById('appsScriptUrl').value;
+            if (!url) {
+                alert('Please enter your Google Apps Script URL');
+                return;
+            }
+            
+            // Update the global URL
+            APPS_SCRIPT_URL = url;
+            
+            // Hide setup instructions
+            document.getElementById('setupInstructions').style.display = 'none';
+            
+            // Load data from sheets
+            loadRequisitionsFromSheets();
+            
+            alert('Connected to Google Sheets successfully!');
+        }
+
+        function useOfflineMode() {
+            // Hide setup instructions
+            document.getElementById('setupInstructions').style.display = 'none';
+            
+            // Load sample data
+            requisitions = [
+                {
+                    id: 'RF-2024-001',
+                    date: '2024-06-15',
+                    projectName: 'Digital Transformation Initiative',
+                    itemDescription: 'Dell Laptop - Core i7, 16GB RAM, 512GB SSD',
+                    totalAmount: 7000.00,
+                    supplier: 'Dell Malaysia',
+                    urgency: 'Medium',
+                    status: 'pending',
+                    submittedDate: '2024-06-15T10:30:00',
+                    files: ['quote-dell-laptops.pdf', 'technical-specs.pdf']
+                },
+                {
+                    id: 'RF-2024-002',
+                    date: '2024-06-10',
+                    projectName: 'Marketing Campaign Q3',
+                    itemDescription: 'Adobe Creative Suite Licenses',
+                    totalAmount: 12000.00,
+                    supplier: 'Adobe Systems',
+                    urgency: 'High',
+                    status: 'approved',
+                    submittedDate: '2024-06-10T14:15:00',
+                    approvedDate: '2024-06-12T09:00:00',
+                    files: ['adobe-quote.pdf']
+                }
+            ];
+            
+            updateDashboard();
+            showMyRequests();
+            
+            alert('Running in offline mode. Data will not be saved permanently.');
+        }
+
         // Initialize the application
         function init() {
             document.getElementById('rfDate').value = new Date().toISOString().split('T')[0];
-            updateDashboard();
-            showMyRequests();
             setupFileUpload();
+            
+            // Check if Apps Script URL is configured
+            if (APPS_SCRIPT_URL.includes('YOUR_SCRIPT_ID')) {
+                // Show setup instructions
+                document.getElementById('setupInstructions').style.display = 'block';
+            } else {
+                // Hide setup instructions and load data
+                document.getElementById('setupInstructions').style.display = 'none';
+                loadRequisitionsFromSheets();
+            }
         }
 
         // Role switching
@@ -871,42 +1063,44 @@
         }
 
         // Form submission
-        document.getElementById('requisitionForm').addEventListener('submit', function(e) {
+        document.getElementById('requisitionForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const formData = new FormData(this);
-            const data = {};
-            for (let [key, value] of formData.entries()) {
-                data[key] = value;
+            try {
+                const formData = new FormData(this);
+                const data = {};
+                for (let [key, value] of formData.entries()) {
+                    data[key] = value;
+                }
+                
+                // Add file information
+                data.files = Array.from(document.querySelectorAll('.file-item span')).map(span => 
+                    span.textContent.split(' (')[0]
+                );
+                
+                // Save to Google Sheets
+                const rfId = await saveRequisitionToSheets(data);
+                
+                // Show success message
+                const successMsg = document.getElementById('successMessage');
+                document.getElementById('newRFId').textContent = rfId;
+                successMsg.style.display = 'block';
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                }, 5000);
+                
+                // Reset form and files
+                this.reset();
+                document.getElementById('uploadedFiles').innerHTML = '';
+                document.getElementById('rfDate').value = new Date().toISOString().split('T')[0];
+                
+                // Reload data from Google Sheets
+                await loadRequisitionsFromSheets();
+                
+            } catch (error) {
+                showError('Failed to save requisition. Please try again.');
+                console.error('Form submission error:', error);
             }
-            
-            // Generate RF ID
-            const rfId = `RF-2024-${String(rfCounter).padStart(3, '0')}`;
-            rfCounter++;
-            
-            // Add metadata
-            data.id = rfId;
-            data.status = 'pending';
-            data.submittedDate = new Date().toISOString();
-            data.files = Array.from(document.querySelectorAll('.file-item span')).map(span => 
-                span.textContent.split(' (')[0]
-            );
-            
-            // Add to requisitions array
-            requisitions.unshift(data);
-            
-            // Show success message
-            const successMsg = document.getElementById('successMessage');
-            document.getElementById('newRFId').textContent = rfId;
-            successMsg.style.display = 'block';
-            setTimeout(() => {
-                successMsg.style.display = 'none';
-            }, 5000);
-            
-            // Reset form and files
-            this.reset();
-            document.getElementById('uploadedFiles').innerHTML = '';
-            document.getElementById('rfDate').value = new Date().toISOString().split('T')[0];
         });
 
         // Display my requests
@@ -995,16 +1189,22 @@
         }
 
         // Update status
-        function updateStatus(rfId, newStatus) {
-            const req = requisitions.find(r => r.id === rfId);
-            if (req) {
-                req.status = newStatus;
+        async function updateStatus(rfId, newStatus) {
+            try {
+                // Update in Google Sheets
+                await updateStatusInSheets(rfId, newStatus);
                 
-                // Add timestamp for status change
-                if (newStatus === 'approved') {
-                    req.approvedDate = new Date().toISOString();
-                } else if (newStatus === 'paid') {
-                    req.paidDate = new Date().toISOString();
+                // Update local data
+                const req = requisitions.find(r => r.id === rfId);
+                if (req) {
+                    req.status = newStatus;
+                    
+                    // Add timestamp for status change
+                    if (newStatus === 'approved') {
+                        req.approvedDate = new Date().toISOString();
+                    } else if (newStatus === 'paid') {
+                        req.paidDate = new Date().toISOString();
+                    }
                 }
                 
                 // Refresh displays
@@ -1016,14 +1216,21 @@
                     showMyRequests();
                 }
                 
+                // Reload fresh data from sheets
+                await loadRequisitionsFromSheets();
+                
                 alert(`Requisition ${rfId} has been ${newStatus}.`);
+                
+            } catch (error) {
+                showError('Failed to update status. Please try again.');
+                console.error('Status update error:', error);
             }
         }
 
         // Cancel request (staff)
-        function cancelRequest(rfId) {
+        async function cancelRequest(rfId) {
             if (confirm('Are you sure you want to cancel this requisition?')) {
-                updateStatus(rfId, 'cancelled');
+                await updateStatus(rfId, 'cancelled');
             }
         }
 
